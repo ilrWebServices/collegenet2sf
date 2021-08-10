@@ -23,5 +23,26 @@ function collegenet2sf_requirements($phase) {
     ]),
   ];
 
+  try {
+    $items = \Drupal::service('database')->queryRange('SELECT [data] FROM {queue} q WHERE [expire] = 0 AND [name] = :name ORDER BY [created] ASC', 0, 10, [':name' => 'collegenet_bulk_job'])->fetchAll();
+
+    $recent_job_ids = [];
+
+    foreach ($items as $item) {
+      $recent_job_ids[] = unserialize($item->data);
+    }
+
+    $requirements['collegenet2sf_bulk_jobs'] = [
+      'severity' => REQUIREMENT_OK,
+      'title' => 'CollegeNET to Salesforce Bulk Jobs',
+      'value' => t('Number of bulk jobs awaiting results: @queue_count.', [
+        '@queue_count' => count($items),
+      ]),
+      'description' => implode(', ', $recent_job_ids),
+    ];
+  }
+  catch (\Exception $e) {
+  }
+
   return $requirements;
 }
