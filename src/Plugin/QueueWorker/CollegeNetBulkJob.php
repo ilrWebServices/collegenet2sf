@@ -94,6 +94,16 @@ class CollegeNetBulkJob extends QueueWorkerBase implements ContainerFactoryPlugi
       }
     }
 
+    // If the job itself failed, and not just individual records, log and remove
+    // from the queue.
+    if ($job_info_response->data['state'] === 'Failed') {
+      $this->logger->error('Job @job_id failed: @message', [
+        '@job_id' => $data,
+        '@message' => $job_info_response->data['errorMessage'],
+      ]);
+      return;
+    }
+
     // Try again later if this job hasn't completed, yet.
     if ($job_info_response->data['state'] !== 'JobComplete') {
       throw new RequeueException();
