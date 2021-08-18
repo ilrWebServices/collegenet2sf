@@ -398,7 +398,7 @@ class CollegeNetToSalesforceProcessor {
     // first result will be the most recently modified.
     $first_match_key = array_search($email, array_column($this->unlinkedLeads, 'Email'));
 
-    if ($first_match_key) {
+    if ($first_match_key !== FALSE) {
       return $this->unlinkedLeads[$first_match_key]['Id'];
     }
 
