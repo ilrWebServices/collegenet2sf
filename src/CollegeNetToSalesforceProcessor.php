@@ -211,7 +211,7 @@ class CollegeNetToSalesforceProcessor {
     }
 
     try {
-      // Get all Grad Leads from Salesforce that do not have a value for the
+      // Get all Leads from Salesforce that do not have a value for the
       // CollegeNET ID.
       $this->fetchUnlinkedLeads($applications);
     }
@@ -384,7 +384,9 @@ class CollegeNetToSalesforceProcessor {
     // long.
     $query = new SalesforceSelectQuery('Lead');
     $query->fields = ['Id', 'Email'];
-    $query->addCondition('RecordType.Name', "'Grad'");
+    if (isset($this->defaultFields['RecordType.Name'])) {
+      $query->addCondition('RecordType.Name', "'" . $this->defaultFields['RecordType.Name'] . "'");
+    }
     $query->addCondition('Email', $emails, 'IN');
     $query->addCondition($this->externalId, 'null');
     $query->order['LastModifiedDate'] = 'DESC';
