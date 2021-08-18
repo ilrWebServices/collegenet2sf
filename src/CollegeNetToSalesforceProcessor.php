@@ -6,6 +6,7 @@ use Drupal\sftp_client\SftpClientInterface;
 use League\Csv\Reader;
 use League\Csv\Statement;
 use League\Csv\Writer;
+use League\Csv\ResultSet;
 use Drupal\salesforce\Rest\RestClientInterface;
 use Drupal\salesforce\SelectQuery as SalesforceSelectQuery;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -152,6 +153,11 @@ class CollegeNetToSalesforceProcessor {
       return FALSE;
     }
 
+    if (empty($this->mapping['EMAIL'])) {
+      $this->logger->error('No mapping set for EMAIL. This is required for existing Lead linking.');
+      return FALSE;
+    }
+
     try {
       // Load the remote CSV file data.
       $csv_data = $this->loadData();
@@ -207,7 +213,7 @@ class CollegeNetToSalesforceProcessor {
     try {
       // Get all Grad Leads from Salesforce that do not have a value for the
       // CollegeNET ID.
-      $this->fetchUnlinkedLeads();
+      $this->fetchUnlinkedLeads($applications);
     }
     catch (\Exception $e) {
       $this->logger->error('CollegeNet Salesforce duplicate Lead check error: @message', [
@@ -362,26 +368,62 @@ class CollegeNetToSalesforceProcessor {
   }
 
   /**
-   * Fetch all Leads that don't have an external ID.
+   * Fetch all Leads for this import that don't have an external ID.
    *
-   * @return bool
-   *   TRUE if the records were fetched and stored. FALSE if not.
+   * @return void
    */
-  protected function fetchUnlinkedLeads() {
+  protected function fetchUnlinkedLeads(ResultSet $records) {
+    $emails = [];
+
+    foreach ($records as $record) {
+      $emails[] = $record['EMAIL'];
+    }
+
+    // Get all unlinked leads for the emails in this import. Use a Bulk API 2.0
+    // query for this because the the standard query paramater can become too
+    // long.
     $query = new SalesforceSelectQuery('Lead');
     $query->fields = ['Id', 'Email'];
     $query->addCondition('RecordType.Name', "'Grad'");
+    $query->addCondition('Email', $emails, 'IN');
     $query->addCondition($this->externalId, 'null');
     $query->order['LastModifiedDate'] = 'DESC';
 
-    $response = $this->sfapi->apiCall('query?q=' . (string) $query, [], 'GET', TRUE);
+    // Request the Bulk API 2.0 query.
+    $bulk_query_response = $this->sfapi->apiCall('jobs/query', [
+      'operation' => 'query',
+      'query' => urldecode((string) $query),
+    ], 'POST', TRUE);
 
-    if (empty($response->data['totalSize'])) {
-      return FALSE;
+    // Wait for the query to complete.
+    $job_id = $bulk_query_response->data['id'];
+    $job_results = FALSE;
+    $job_complete_checks = 0;
+
+    while ($job_results === FALSE) {
+      $job_complete_checks++;
+      sleep(2);
+
+      if ($job_complete_checks > 20) {
+        throw new \Exception('Bulk 2.0 API job complete check timed out.', self::INTERNAL_EXCEPTION);
+      }
+
+      $bulk_query_info_response = $this->sfapi->apiCall('jobs/query/' . $job_id, [], 'GET', TRUE);
+
+      // Try again later if this job hasn't completed, yet.
+      if ($bulk_query_info_response->data['state'] === 'JobComplete') {
+        $bulk_query_results_response = $this->sfapi->apiCall('jobs/query/' . $job_id . '/results', [], 'GET', TRUE);
+        $job_results = $bulk_query_results_response->data;
+      }
     }
 
-    $this->unlinkedLeads = $response->data['records'];
-    return TRUE;
+    // Parse the query results.
+    $unlinked = Reader::createFromString($job_results);
+    $unlinked->setHeaderOffset(0);
+
+    foreach ($unlinked->getRecords() as $unlinked_record) {
+      $this->unlinkedLeads[] = $unlinked_record;
+    }
   }
 
   /**
