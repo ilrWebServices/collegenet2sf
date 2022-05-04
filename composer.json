@@ -6,7 +6,7 @@
   "license": "GPL-2.0+",
   "minimum-stability": "dev",
   "require": {
-    "drupal/salesforce": "^4.0",
+    "drupal/salesforce": "^5.0",
     "drupal/sftp_client": "1.0.x-dev",
     "league/csv": "^9.0"
   },
