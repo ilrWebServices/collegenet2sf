@@ -124,6 +124,15 @@ class CollegeNetToSalesforceProcessor {
     $sftp_settings = $settings->get('sftp') ?? [];
     $default_fields = $settings->get('default_fields') ?? [];
     $this->mapping = $settings->get('mapping') ?? [];
+
+    // Replace `/` characters with `.` (dot) characters in mapping keys. E.g.
+    // `COLLEGE_MAJOR/1` -> `COLLEGE_MAJOR.1`. This is done because Drupal
+    // config YAML doesn't allow dot chars in keys. In retrospect, we probably
+    // should have used the same format as the `default_fields` setting.
+    $this->mapping = array_combine(array_map(function($key) {
+      return str_replace('/', '.', $key);
+    }, array_keys($this->mapping)), array_values($this->mapping));
+
     $this->sftpSettings = $sftp_settings + [
       'connection_name' => 'collegenet',
       'filename_pattern' => '/.*\.csv$/',
