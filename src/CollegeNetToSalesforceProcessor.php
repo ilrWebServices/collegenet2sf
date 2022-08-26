@@ -189,6 +189,7 @@ class CollegeNetToSalesforceProcessor {
     try {
       // Parse the CSV data.
       $reader = Reader::createFromString($csv_data);
+      $reader->setEscape('');
       $reader->setHeaderOffset(0);
     }
     catch (\Exception $e) {
