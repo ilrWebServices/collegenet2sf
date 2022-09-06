@@ -5,9 +5,15 @@
   "keywords": ["Drupal"],
   "license": "GPL-2.0+",
   "minimum-stability": "dev",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://git.drupalcode.org/project/sftp_client-3308194.git"
+    }
+  ],
   "require": {
     "drupal/salesforce": "^5.0",
-    "drupal/sftp_client": "1.0.x-dev",
+    "drupal/sftp_client": "dev-phpseclib3",
     "league/csv": "^9.0"
   },
   "extra": {
