@@ -153,10 +153,13 @@ class CollegeNetToSalesforceProcessor {
   /**
    * Executes a CollegeNET data fetch and bulk upload to Salesforce.
    *
+   * @param string $data
+   *   Optional CSV data. If null, CSV data will be fetched from the sftp server.
+   *
    * @return bool
    *   TRUE upon success, FALSE otherwise.
    */
-  public function run() {
+  public function run($data = NULL) {
     if (empty($this->externalId)) {
       $this->logger->error('No mapping set for CRM_ID. This is required for the external Salesforce ID used for upserts.');
       return FALSE;
@@ -168,8 +171,8 @@ class CollegeNetToSalesforceProcessor {
     }
 
     try {
-      // Load the remote CSV file data.
-      $csv_data = $this->loadData();
+      // Load the remote CSV file data if no optional data was passed in.
+      $csv_data = $data ?? $this->loadData();
     }
     catch (\Exception $e) {
       if ($e->getCode() === self::INTERNAL_EXCEPTION) {
