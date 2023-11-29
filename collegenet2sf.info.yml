@@ -1,7 +1,7 @@
 name: 'CollegeNET to Salesforce Lead'
 type: module
 description: 'Transfers CollegeNET prospects to Salesforce as Leads.'
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^9.4 || ^10
 package: 'ILR'
 dependencies:
   - salesforce:salesforce
