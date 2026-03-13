@@ -127,7 +127,7 @@ class CollegeNetBulkJob extends QueueWorkerBase implements ContainerFactoryPlugi
 
     // Parse the response CSV data. If this throws an error, the item will be
     // re-queued.
-    $reader = Reader::createFromString($job_failure_response->data);
+    $reader = Reader::fromString($job_failure_response->data);
     $reader->setHeaderOffset(0);
 
     foreach ($reader->getRecords() as $record) {

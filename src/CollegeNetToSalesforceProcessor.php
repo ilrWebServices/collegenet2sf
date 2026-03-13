@@ -191,7 +191,7 @@ class CollegeNetToSalesforceProcessor {
 
     try {
       // Parse the CSV data.
-      $reader = Reader::createFromString($csv_data);
+      $reader = Reader::fromString($csv_data);
       $reader->setEscape('');
       $reader->setHeaderOffset(0);
     }
@@ -238,7 +238,7 @@ class CollegeNetToSalesforceProcessor {
 
     try {
       // Prepare the bulk upsert application data.
-      $writer = Writer::createFromString();
+      $writer = Writer::fromString();
 
       $default_field_columns = array_keys($this->defaultFields);
       $default_field_values = array_values($this->defaultFields);
@@ -375,7 +375,9 @@ class CollegeNetToSalesforceProcessor {
    *   An iterable \League\Csv\Statement with the filtered records.
    */
   protected function filterApplications(Reader $reader) {
-    return Statement::create()
+    $stmt = new Statement();
+
+    return $stmt
       ->where(fn(array $record) => !empty($record['CRM_ID']))
       ->process($reader);
   }
@@ -433,7 +435,7 @@ class CollegeNetToSalesforceProcessor {
     }
 
     // Parse the query results.
-    $unlinked = Reader::createFromString($job_results);
+    $unlinked = Reader::fromString($job_results);
     $unlinked->setHeaderOffset(0);
 
     foreach ($unlinked->getRecords() as $unlinked_record) {
