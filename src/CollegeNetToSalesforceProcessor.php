@@ -399,8 +399,8 @@ class CollegeNetToSalesforceProcessor {
     // long.
     $query = new SalesforceSelectQuery('Lead');
     $query->fields = ['Id', 'Email'];
-    if (isset($this->defaultFields['RecordType.Name'])) {
-      $query->addCondition('RecordType.Name', "'" . $this->defaultFields['RecordType.Name'] . "'");
+    if (isset($this->defaultFields['RecordTypeId'])) {
+      $query->addCondition('RecordTypeId', "'" . $this->defaultFields['RecordTypeId'] . "'");
     }
     $query->addCondition('Email', $emails, 'IN');
     $query->addCondition($this->externalId, 'null');
