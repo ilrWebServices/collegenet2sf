@@ -344,6 +344,8 @@ class CollegeNetToSalesforceProcessor {
   /**
    * Load CSV data from the SFTP connection.
    *
+   * To test without SFTP: `return file_get_contents('SOME_EXAMPLE.csv');`
+   *
    * @return string
    *   Unparsed CSV data from the remote file.
    */
