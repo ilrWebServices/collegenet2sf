@@ -397,19 +397,15 @@ class CollegeNetToSalesforceProcessor {
     // Get all unlinked leads for the emails in this import. Use a Bulk API 2.0
     // query for this because the the standard query paramater can become too
     // long.
-    $query = new SalesforceSelectQuery('Lead');
-    $query->fields = ['Id', 'Email'];
-    if (isset($this->defaultFields['RecordTypeId'])) {
-      $query->addCondition('RecordTypeId', "'" . $this->defaultFields['RecordTypeId'] . "'");
-    }
-    $query->addCondition('Email', $emails, 'IN');
-    $query->addCondition($this->externalId, 'null');
-    $query->order['LastModifiedDate'] = 'DESC';
+    $query = sprintf("SELECT Id,Email FROM Lead WHERE RecordTypeId = '%s' AND Email IN (%s) AND CollegeNET_CRM_ID__c = null ORDER BY LastModifiedDate DESC",
+      $this->defaultFields['RecordTypeId'],
+      "'" . implode("','", $emails) . "'"
+    );
 
     // Request the Bulk API 2.0 query.
     $bulk_query_response = $this->sfapi->apiCall('jobs/query', [
       'operation' => 'query',
-      'query' => urldecode((string) $query),
+      'query' => $query,
     ], 'POST', TRUE);
 
     // Wait for the query to complete.
