@@ -301,10 +301,14 @@ class CollegeNetToSalesforceProcessor {
         }
       }
       catch (\Exception $e) {
-        // Log but do not stop processing.
-        $this->logger->error('CollegeNet Lead link error: @message', [
-          '@message' => $e->getMessage(),
-        ]);
+        // Log but do not stop processing. Skip logging of attempted updates of
+        // Leads that already have the external CRM ID on them, since the
+        // existing leads with that ID will be properly updated.
+        if (strpos($e->getMessage(), 'duplicate value found: CollegeNET_CRM_ID__c') === FALSE) {
+          $this->logger->error('CollegeNet Lead link error: @message', [
+            '@message' => $e->getMessage(),
+          ]);
+        }
       }
     }
 
