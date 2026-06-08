@@ -276,8 +276,6 @@ class CollegeNetToSalesforceProcessor {
 
     // Link any unlinked Leads to ensure that they have external IDs for the
     // later batch upsert.
-    $leads_linked = 0;
-
     foreach ($this->leadsToLink as $sfid_to_update => $external_id) {
       try {
         $link_response = $this->sfapi->apiCall("sobjects/Lead/" . $sfid_to_update, [$this->externalId => $external_id], 'PATCH', TRUE);
@@ -285,7 +283,20 @@ class CollegeNetToSalesforceProcessor {
         // The 204 status code seems to come back from a PATCH request, but any
         // 200 code is fine.
         if ($link_response->getStatusCode() >= 200 && $link_response->getStatusCode() < 300) {
-          $leads_linked++;
+          // Log the newly linked info.
+          $this->logger->notice('CollegeNet Lead @sfid linked to @crmid.', [
+            '@sfid' => $sfid_to_update,
+            '@crmid' => $external_id,
+          ]);
+        }
+        else {
+          // Log info if the call was successful but the record wasn't updated as expected.
+          $this->logger->error('CollegeNet Lead @sfid failed to link @crmid with status code @status_code (@reason).', [
+            '@status_code' => $link_response->getStatusCode(),
+            '@reason' => $link_response->getReasonPhrase(),
+            '@sfid' => $sfid_to_update,
+            '@crmid' => $external_id,
+          ]);
         }
       }
       catch (\Exception $e) {
@@ -294,12 +305,6 @@ class CollegeNetToSalesforceProcessor {
           '@message' => $e->getMessage(),
         ]);
       }
-    }
-
-    if ($leads_linked) {
-      $this->logger->info('%count CollegeNet Lead(s) linked.', [
-        '%count' => $leads_linked,
-      ]);
     }
 
     try {
