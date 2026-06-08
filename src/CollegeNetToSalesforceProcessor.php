@@ -6,11 +6,12 @@ use Drupal\sftp_client\SftpClientInterface;
 use League\Csv\Reader;
 use League\Csv\Statement;
 use League\Csv\Writer;
-use League\Csv\ResultSet;
 use Drupal\salesforce\Rest\RestClientInterface;
 use Drupal\salesforce\SelectQuery as SalesforceSelectQuery;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Queue\QueueFactory;
+use Drupal\sftp_client\SftpResource;
+use League\Csv\TabularDataReader;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -376,10 +377,10 @@ class CollegeNetToSalesforceProcessor {
    * @param \League\Csv\Reader $reader
    *   A CSV Reader object with parsed data.
    *
-   * @return \League\Csv\Statement
-   *   An iterable \League\Csv\Statement with the filtered records.
+   * @return \League\Csv\TabularDataReader
+   *   An iterable \League\Csv\TabularDataReader with the filtered records.
    */
-  protected function filterApplications(Reader $reader) {
+  protected function filterApplications(Reader $reader): TabularDataReader {
     $stmt = new Statement();
 
     return $stmt
@@ -392,7 +393,7 @@ class CollegeNetToSalesforceProcessor {
    *
    * @return void
    */
-  protected function fetchUnlinkedLeads(ResultSet $records) {
+  protected function fetchUnlinkedLeads(TabularDataReader $records) {
     $emails = [];
 
     foreach ($records as $record) {
@@ -492,10 +493,10 @@ class CollegeNetToSalesforceProcessor {
    * @param \Traversable $files
    *   A list of files from SftpClientInterface::listFiles().
    *
-   * @return \Drupal\sftp_client\SftpResource[]|\Generator
-   *   The list of files filtered by name and age.
+   * @return \Drupal\sftp_client\SftpResource
+   *   An SftpResource object representing the newest file.
    */
-  protected function getMostRecent(\Traversable $files) {
+  protected function getMostRecent(\Traversable $files): SftpResource {
     $high_mark = 0;
     $newest_file = NULL;
 
